@@ -5,29 +5,18 @@ import chess.pgn
 import sparse
 import math
 
-class CustomSigmoid(nn.Module):
-    def __init__(self, scalar=0.0015):
-        super(CustomSigmoid, self).__init__()
-        self.scalar = torch.tensor(scalar)
-
-    def forward(self, x):
-        return 1 / (1 + torch.exp(-x * self.scalar))
-
 class ChessNN(nn.Module):
     def __init__(self):
         super(ChessNN, self).__init__()
         self.fc1 = nn.Linear(768, 512)
-        self.fc2 = nn.Linear(512, 64)
-        self.fc3 = nn.Linear(64, 1)
-        self.custom_sigmoid = CustomSigmoid()
+        self.fc2 = nn.Linear(512, 1)
 
     def forward(self, x):
         x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        x = self.custom_sigmoid(self.fc3(x))
+        x = self.fc2(x)
         return x
     
-weights_path = 'main_weights/weights_epoch-12_768-512-64-1_b-128.nnue'
+weights_path = 'weights/nn-e6b128-768-512-1.nnue'
 net = ChessNN()
 net.load_state_dict(torch.load(weights_path, weights_only=True))
 net.eval()
@@ -41,11 +30,8 @@ def evaluate_position(board):
     with torch.no_grad():
         output = net(input_fen)
     output = output.squeeze() 
-    
-    sigmoid_scalar = 0.0015
-    original_value = torch.log(output / (1 - output)) / sigmoid_scalar    
-    
-    return original_value.item()
+       
+    return output.item()
 
 def quiescence_search(board, alpha, beta, node_count):
     stand_pat = evaluate_position(board)
@@ -126,11 +112,11 @@ def play_game(starting_fen, max_depth):
             break
 
 if __name__ == '__main__':
-    fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-    #board = chess.Board()
-    #board.set_fen(fen)
+    fen = '3KR3/8/2k5/8/8/8/8/8 w - - 0 1'
+    board = chess.Board()
+    board.set_fen(fen)
     
-    max_depth = 3
-    #best_move, score = iterative_deepening(board, max_depth)
+    max_depth = 10
+    best_move, score = iterative_deepening(board, max_depth)
 
-    play_game(fen, max_depth)
+    #play_game(fen, max_depth)

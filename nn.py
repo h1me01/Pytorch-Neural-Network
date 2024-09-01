@@ -25,7 +25,7 @@ class ChessDataset(torch.utils.data.Dataset):
         return torch.as_tensor(inputs, dtype=torch.float32), torch.as_tensor(eval_data, dtype=torch.float32)
 
 class MPELoss(nn.Module):
-    def __init__(self, power=2.5):
+    def __init__(self, power=2):
         super(MPELoss, self).__init__()
         self.power = power
 
@@ -37,7 +37,7 @@ class MPELoss(nn.Module):
 class CustomSigmoid(nn.Module):
     def __init__(self, scalar=0.0015):
         super(CustomSigmoid, self).__init__()
-        self.scalar = torch.tensor(scalar).cuda(0)
+        self.scalar = scalar
 
     def forward(self, x):
         return 1 / (1 + torch.exp(-x * self.scalar))
@@ -45,15 +45,13 @@ class CustomSigmoid(nn.Module):
 class ChessNN(nn.Module):
     def __init__(self):
         super(ChessNN, self).__init__()
-        self.fc1 = nn.Linear(768, 64)
-        self.fc2 = nn.Linear(64, 64)
-        self.fc3 = nn.Linear(64, 1)
+        self.fc1 = nn.Linear(768, 512)
+        self.fc2 = nn.Linear(512, 1)
         self.custom_sigmoid = CustomSigmoid()
 
     def forward(self, x):
         x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        x = self.custom_sigmoid(self.fc3(x))
+        x = self.custom_sigmoid(self.fc2(x))
         return x
 
 def he_init(m):
@@ -69,18 +67,18 @@ def save_checkpoint(epoch, model, optimizer, path):
         'optimizer_state_dict': optimizer.state_dict(),
     }, path)
 
-def train(net, criterion, optimizer, train_loader, val_loader, epochs=50, resume=False):
+def train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50, resume=False):
     print('Model Architecture:\n')
     print(net)
 
     print(f'\nTraining dataset size: {len(train_loader.dataset)} samples')
     print(f'Validation dataset size: {len(val_loader.dataset)} samples\n')
 
-    net.cuda(0)
+    net.to(device)
 
     start_epoch = 0
     if resume:
-        checkpoint = torch.load('checkpoint/net_checkpoint.tar')
+        checkpoint = torch.load('checkpoint/net_epoch_18_checkpoint.tar', map_location=device)
         net.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         start_epoch = checkpoint['epoch'] + 1
@@ -93,15 +91,12 @@ def train(net, criterion, optimizer, train_loader, val_loader, epochs=50, resume
         net.train()
         running_train_loss = 0
         for inputs, targets in train_loader:
-            inputs = inputs.cuda(0, non_blocking=True)
-            targets = targets.cuda(0, non_blocking=True)
+            inputs = inputs.to(device, non_blocking=True)
+            targets = targets.to(device, non_blocking=True)
             optimizer.zero_grad()
             outputs = net(inputs)
             loss = criterion(outputs.squeeze(), targets)
             loss.backward()
-            
-            # Gradient clipping
-            #torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm=1.0)
             
             optimizer.step()
             running_train_loss += loss.item() * inputs.size(0)
@@ -113,8 +108,8 @@ def train(net, criterion, optimizer, train_loader, val_loader, epochs=50, resume
         running_val_loss = 0
         with torch.no_grad():
             for inputs, targets in val_loader:
-                inputs = inputs.cuda(0, non_blocking=True)
-                targets = targets.cuda(0, non_blocking=True)
+                inputs = inputs.to(device, non_blocking=True)
+                targets = targets.to(device, non_blocking=True)
                 outputs = net(inputs)
                 loss = criterion(outputs.squeeze(), targets)
                 running_val_loss += loss.item() * inputs.size(0)
@@ -128,20 +123,22 @@ def train(net, criterion, optimizer, train_loader, val_loader, epochs=50, resume
               f'Time per Epoch: {epoch_time:.2f} seconds')
         
         save_checkpoint(epoch, net, optimizer, f'checkpoint/net_epoch_{epoch+1}_checkpoint.tar')
-        torch.save(net.state_dict(), f'weights/weights_epoch-{epoch+1}_768-64-64-1_b-128.nnue')
+        torch.save(net.state_dict(), f'weights/nn-e{epoch+1}b512-768-512-1.nnue')
 
 if __name__ == '__main__':
     torch.backends.cudnn.benchmark = True
     #fixed_seed.set_seed(42)
 
-    train_data_path = 'data/data.csv'
-    val_data_path = 'data/val_data.csv'
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
+    train_data_path = r'C:\Users\semio\Downloads\Temp\data\data.csv'
+    val_data_path = r'C:\Users\semio\Downloads\Temp\data\val_data.csv'
 
     train_dataset = ChessDataset(train_data_path, max_samples=None)
     val_dataset = ChessDataset(val_data_path, max_samples=None)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=128, shuffle=False)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=512, shuffle=True, num_workers=2, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=512, shuffle=False, num_workers=2, pin_memory=True)
     
     net = ChessNN() 
     net.apply(he_init)
@@ -149,4 +146,4 @@ if __name__ == '__main__':
     criterion = MPELoss(power=2.5)
     optimizer = optim.Adam(net.parameters(), lr=0.01, betas=(0.95, 0.999))
     
-    train(net, criterion, optimizer, train_loader, val_loader, epochs=50, resume=False)
+    train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50, resume=True)

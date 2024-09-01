@@ -2,7 +2,7 @@ import pandas as pd
 import torch
 import subprocess
 
-max_position = 100000
+max_position = None
 
 file_path = r'C:\Users\semio\Documents\Coding\Projects\Astra-Data\TrainingData\chess_data_d9.csv'
 df = pd.read_csv(file_path, header=None, nrows=max_position)

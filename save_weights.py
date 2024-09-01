@@ -1,16 +1,26 @@
-import nn
 import torch
-import fixed_seed
+import torch.nn as nn
 import sparse
 
-def save_weights_and_biases(model):
-    for name, param in model.named_parameters():
-        if "weight" in name or "bias" in name:
-            param_array = param.detach().cpu().numpy()
-            param_array = param_array.flatten()
-            
-            file_name = f"{name}.txt"    
-            with open(file_name, 'w') as f:
+class ChessNN(nn.Module):
+    def __init__(self):
+        super(ChessNN, self).__init__()
+        self.fc1 = nn.Linear(768, 512)
+        self.fc2 = nn.Linear(512, 1)
+
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+def save_weights_and_biases(model, filename='nn-768-512-1.txt'):
+    with open(filename, 'w') as f:
+        for name, param in model.named_parameters():
+            if "weight" in name or "bias" in name:
+                param_array = param.detach().cpu().numpy()
+                param_array = param_array.flatten()
+                
+                f.write(f"{name}\n")
                 f.write(' '.join(map(str, param_array)) + '\n')
                 
 def predict(net, fen):
@@ -25,14 +35,12 @@ def predict(net, fen):
     return output.item()
 
 if __name__ == '__main__':
-    #fixed_seed.set_seed(42)
+    weights_path = 'main_weights/nn-e15b128-768-512-1.nnue'
 
-    weights_path = 'main_weights/net_weights_epoch_1.nnue'
-
-    net = nn.ChessNN()
+    net = ChessNN()
     net.load_state_dict(torch.load(weights_path, weights_only=True))
 
-    #fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-    #print(predict(net, fen))
+    fen = 'rnbqkb1r/pppppppp/5n2/8/3P4/5N2/PPP1PPPP/RNBQKB1R b KQkq - 0 3'
+    print(predict(net, fen))
 
     save_weights_and_biases(net)
