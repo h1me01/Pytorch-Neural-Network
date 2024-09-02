@@ -21,8 +21,8 @@ class ChessDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         fen_data = self.fens.iloc[idx]
         eval_data = self.evals.iloc[idx]
-        inputs = sparse.get(fen_data)
-        return torch.as_tensor(inputs, dtype=torch.float32), torch.as_tensor(eval_data, dtype=torch.float32)
+        inputs1, inputs2 = sparse.get(fen_data)
+        return torch.as_tensor(inputs1, dtype=torch.float32), torch.as_tensor(inputs2, dtype=torch.float32), torch.as_tensor(eval_data, dtype=torch.float32)
 
 class MPELoss(nn.Module):
     def __init__(self, power=2):
@@ -45,13 +45,14 @@ class CustomSigmoid(nn.Module):
 class ChessNN(nn.Module):
     def __init__(self):
         super(ChessNN, self).__init__()
-        self.fc1 = nn.Linear(768, 512)
-        self.fc2 = nn.Linear(512, 1)
-        self.custom_sigmoid = CustomSigmoid()
+        self.fc1 = nn.Linear(2*768, 2*512)  
+        self.fc2 = nn.Linear(2*512, 1)
+        self.custom_sigmoid = CustomSigmoid()  
 
-    def forward(self, x):
-        x = torch.relu(self.fc1(x))
-        x = self.custom_sigmoid(self.fc2(x))
+    def forward(self, x1, x2):
+        merged_input = torch.cat((x1, x2), dim=1)
+        x = torch.relu(self.fc1(merged_input)) 
+        x = self.custom_sigmoid(self.fc2(x))  
         return x
 
 def he_init(m):
@@ -78,7 +79,7 @@ def train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50
 
     start_epoch = 0
     if resume:
-        checkpoint = torch.load('checkpoint/net_epoch_18_checkpoint.tar', map_location=device)
+        checkpoint = torch.load('checkpoint/net_epoch_1_checkpoint.tar', map_location=device)
         net.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         start_epoch = checkpoint['epoch'] + 1
@@ -90,16 +91,17 @@ def train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50
         # Training phase
         net.train()
         running_train_loss = 0
-        for inputs, targets in train_loader:
-            inputs = inputs.to(device, non_blocking=True)
+        for inputs1, inputs2, targets in train_loader: 
+            inputs1 = inputs1.to(device, non_blocking=True)
+            inputs2 = inputs2.to(device, non_blocking=True)
             targets = targets.to(device, non_blocking=True)
             optimizer.zero_grad()
-            outputs = net(inputs)
+            outputs = net(inputs1, inputs2) 
             loss = criterion(outputs.squeeze(), targets)
             loss.backward()
             
             optimizer.step()
-            running_train_loss += loss.item() * inputs.size(0)
+            running_train_loss += loss.item() * inputs1.size(0)
         
         epoch_train_loss = running_train_loss / len(train_loader.dataset)
         
@@ -107,12 +109,13 @@ def train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50
         net.eval()
         running_val_loss = 0
         with torch.no_grad():
-            for inputs, targets in val_loader:
-                inputs = inputs.to(device, non_blocking=True)
+            for inputs1, inputs2, targets in val_loader: 
+                inputs1 = inputs1.to(device, non_blocking=True)
+                inputs2 = inputs2.to(device, non_blocking=True)
                 targets = targets.to(device, non_blocking=True)
-                outputs = net(inputs)
+                outputs = net(inputs1, inputs2) 
                 loss = criterion(outputs.squeeze(), targets)
-                running_val_loss += loss.item() * inputs.size(0)
+                running_val_loss += loss.item() * inputs1.size(0)
         
         epoch_val_loss = running_val_loss / len(val_loader.dataset)
         epoch_time = time.time() - start_time
@@ -123,7 +126,7 @@ def train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50
               f'Time per Epoch: {epoch_time:.2f} seconds')
         
         save_checkpoint(epoch, net, optimizer, f'checkpoint/net_epoch_{epoch+1}_checkpoint.tar')
-        torch.save(net.state_dict(), f'weights/nn-e{epoch+1}b512-768-512-1.nnue')
+        torch.save(net.state_dict(), f'weights/nn-e{epoch+1}b256-768-512-1.nnue')
 
 if __name__ == '__main__':
     torch.backends.cudnn.benchmark = True
@@ -137,8 +140,8 @@ if __name__ == '__main__':
     train_dataset = ChessDataset(train_data_path, max_samples=None)
     val_dataset = ChessDataset(val_data_path, max_samples=None)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=512, shuffle=True, num_workers=2, pin_memory=True)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=512, shuffle=False, num_workers=2, pin_memory=True)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=256, shuffle=True, num_workers=2, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=256, shuffle=False, num_workers=2, pin_memory=True)
     
     net = ChessNN() 
     net.apply(he_init)
@@ -146,4 +149,4 @@ if __name__ == '__main__':
     criterion = MPELoss(power=2.5)
     optimizer = optim.Adam(net.parameters(), lr=0.01, betas=(0.95, 0.999))
     
-    train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50, resume=True)
+    train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50, resume=False)

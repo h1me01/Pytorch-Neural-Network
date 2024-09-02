@@ -15,9 +15,10 @@ def index(sqr, pc, pt, view):
     return sqr + pt * 64 + (pc != view) * 64 * 6
 
 def get(fen):
-    view = 0 if 'w' in fen else 1
+    stm = 0 if 'w' in fen else 1
 
-    sparse_input = np.zeros(768) 
+    input1 = np.zeros(768) 
+    input2 = np.zeros(768) 
     fen_board = fen.split(' ')[0] 
     fen_rows = fen_board.split('/')
 
@@ -33,8 +34,13 @@ def get(fen):
                 pc = 0 if char.isupper() else 1
                 pt = piece_idx[p]
                 sqr = rank * 8 + file
-                idx = index(sqr, pc, pt, view)
-                sparse_input[idx] = 1
+                idx1 = index(sqr, pc, pt, 0) # white view
+                idx2 = index(sqr, pc, pt, 1) # black view
+                input1[idx1] = 1
+                input2[idx2] = 1
                 file += 1 
 
-    return sparse_input
+    if stm == 1:
+        input1, input2 = input2, input1
+
+    return input1, input2
