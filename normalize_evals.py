@@ -30,6 +30,3 @@ for index, row in df.iterrows():
 output_file_path = 'data/data.csv'
 df.to_csv(output_file_path, index=False, header=False)
 print('Processing complete. Data saved to', output_file_path)
-
-# Uncomment the line below to enable shutdown after processing
-# subprocess.run(["shutdown", "/s", "/t", "1"])

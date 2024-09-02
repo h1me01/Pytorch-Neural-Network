@@ -1,7 +1,4 @@
 import torch
-import numpy as np
-import torch.nn as n
-import fixed_seed
 import nn
 
 def test_model(net, criterion, val_loader, weights_path):
@@ -22,8 +19,6 @@ def test_model(net, criterion, val_loader, weights_path):
     print(f'Validation Loss with weights from {weights_path}: {epoch_val_loss:.7f}')
 
 if __name__ == "__main__":
-    #fixed_seed.set_seed(42)
-
     val_data_path = 'data/val_data.csv'
     val_dataset = nn.ChessDataset(val_data_path, max_samples=None)
     val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=128, shuffle=False)

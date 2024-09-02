@@ -40,6 +40,7 @@ def get(fen):
                 input2[idx2] = 1
                 file += 1 
 
+    # we want to swap the inputs if it's black to move
     if stm == 1:
         input1, input2 = input2, input1
 
