@@ -79,7 +79,7 @@ def train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50
 
     start_epoch = 0
     if resume:
-        checkpoint = torch.load('checkpoint/net_epoch_1_checkpoint.tar', map_location=device)
+        checkpoint = torch.load('checkpoint/net_epoch_13_checkpoint.tar', map_location=device)
         net.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         start_epoch = checkpoint['epoch'] + 1
@@ -140,8 +140,8 @@ if __name__ == '__main__':
     train_dataset = ChessDataset(train_data_path, max_samples=None)
     val_dataset = ChessDataset(val_data_path, max_samples=None)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=256, shuffle=True, num_workers=2, pin_memory=True)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=256, shuffle=False, num_workers=2, pin_memory=True)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=256, shuffle=True, num_workers=4, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=256, shuffle=False, num_workers=4, pin_memory=True)
     
     net = ChessNN() 
     net.apply(he_init)
@@ -149,4 +149,4 @@ if __name__ == '__main__':
     criterion = MPELoss(power=2.5)
     optimizer = optim.Adam(net.parameters(), lr=0.01, betas=(0.95, 0.999))
     
-    train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50, resume=False)
+    train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50, resume=True)

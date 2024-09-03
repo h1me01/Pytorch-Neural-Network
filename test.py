@@ -26,4 +26,4 @@ if __name__ == "__main__":
     net = nn.ChessNN()
     criterion = nn.MPELoss(power=2.5)
 
-    test_model(net, criterion, val_loader, 'weights/weights_epoch-15_768-512-64-1_b-128.nnue')
+    test_model(net, criterion, val_loader, 'weights/nn-e10b256-768-512-1.nnue')
