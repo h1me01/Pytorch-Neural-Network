@@ -79,7 +79,7 @@ def train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50
 
     start_epoch = 0
     if resume:
-        checkpoint = torch.load('checkpoint/net_epoch_13_checkpoint.tar', map_location=device)
+        checkpoint = torch.load('checkpoint/net_epoch_25_checkpoint.tar', map_location=device)
         net.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         start_epoch = checkpoint['epoch'] + 1

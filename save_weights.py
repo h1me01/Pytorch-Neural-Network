@@ -37,7 +37,7 @@ def predict(net, fen):
     return output.item()
 
 if __name__ == '__main__':
-    weights_path = 'weights/nn-e12b256-768-512-1.nnue'
+    weights_path = 'main_weights/nn-e25b256-768-512-1.nnue'
 
     net = ChessNN()
     net.load_state_dict(torch.load(weights_path, weights_only=True))
