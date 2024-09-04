@@ -14,9 +14,9 @@ class ChessNN(nn.Module):
         x = self.fc2(x) 
         return x
 
-def save_weights_and_biases(model, filename='nn-768-512-1.txt'):
+def save_weights_and_biases(net, filename='nn-768-512-1.txt'):
     with open(filename, 'w') as f:
-        for name, param in model.named_parameters():
+        for name, param in net.named_parameters():
             if "weight" in name or "bias" in name:
                 param_array = param.detach().cpu().numpy()
                 param_array = param_array.flatten()

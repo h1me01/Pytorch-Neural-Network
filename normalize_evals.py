@@ -1,6 +1,5 @@
 import pandas as pd
 import torch
-import subprocess
 
 max_position = None
 

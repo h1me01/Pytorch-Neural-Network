@@ -61,15 +61,15 @@ def he_init(m):
         if m.bias is not None:
             torch.nn.init.zeros_(m.bias)
 
-def save_checkpoint(epoch, model, optimizer, path):
+def save_checkpoint(epoch, net, optimizer, path):
     torch.save({
         'epoch': epoch,
-        'model_state_dict': model.state_dict(),
+        'model_state_dict': net.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
     }, path)
 
 def train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50, resume=False):
-    print('Model Architecture:\n')
+    print('Net Architecture:\n')
     print(net)
 
     print(f'\nTraining dataset size: {len(train_loader.dataset)} samples')

@@ -1,7 +1,7 @@
 import torch
 import nn
 
-def test_model(net, criterion, val_loader, weights_path):
+def test_net(net, criterion, val_loader, weights_path):
     net.cuda(0)
     net.load_state_dict(torch.load(weights_path, weights_only=True))
     net.eval()
@@ -26,4 +26,4 @@ if __name__ == "__main__":
     net = nn.ChessNN()
     criterion = nn.MPELoss(power=2.5)
 
-    test_model(net, criterion, val_loader, 'weights/nn-e10b256-768-512-1.nnue')
+    test_net(net, criterion, val_loader, 'weights/nn-e10b256-768-512-1.nnue')
