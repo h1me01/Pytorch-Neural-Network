@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import numpy as np
 import sparse
 
 class ChessNN(nn.Module):
@@ -14,7 +15,29 @@ class ChessNN(nn.Module):
         x = self.fc2(x) 
         return x
 
-def save_weights_and_biases(net, filename='nn-768-512-1.txt'):
+def save_quantisized(net, filename='nn-768-512-1-quantized.txt'):
+    scalar_1 = 16
+    scalar_2 = 512
+    
+    with open(filename, 'w') as f:
+        for name, param in net.named_parameters():
+            param_array = param.detach().cpu().numpy()
+
+            if "fc1" in name:
+                if "bias" in name:
+                    param_quantized = np.round(param_array * scalar_1).astype(np.int16)
+                else:
+                    param_quantized = np.round(param_array * scalar_1).astype(np.int16)
+            elif "fc2" in name:
+                if "bias" in name:
+                    param_quantized = np.round(param_array * (scalar_1 * scalar_2)).astype(np.int32)
+                else:
+                    param_quantized = np.round(param_array * scalar_2).astype(np.int16)
+
+            f.write(f"{name}\n")
+            f.write(' '.join(map(str, param_quantized.flatten())) + '\n')
+
+def save(net, filename='nn-768-512-1.txt'):
     with open(filename, 'w') as f:
         for name, param in net.named_parameters():
             if "weight" in name or "bias" in name:
@@ -37,12 +60,13 @@ def predict(net, fen):
     return output.item()
 
 if __name__ == '__main__':
-    weights_path = 'main_weights/nn-e25b256-768-512-1.nnue'
+    weights_path = 'main_weights/nn-e20b256-768-512-1.nnue'
 
     net = ChessNN()
     net.load_state_dict(torch.load(weights_path, weights_only=True))
 
-    fen = '2b1rrk1/ppp2pp1/7p/3Pp3/4P1nP/P1N2Nq1/1P2R1P1/3B1RK1 b - - 14 31'
+    fen = '8/5p2/5k2/p1R2p1p/7P/4K1P1/8/5r2 b - - 9 46'
     print(predict(net, fen))
 
-    save_weights_and_biases(net)
+    save(net)
+   # save_quantisized(net)

@@ -15,8 +15,6 @@ def index(sqr, pc, pt, view):
     return sqr + pt * 64 + (pc != view) * 64 * 6
 
 def get(fen):
-    stm = 0 if 'w' in fen else 1
-
     input1 = np.zeros(768) 
     input2 = np.zeros(768) 
     fen_board = fen.split(' ')[0] 
@@ -41,6 +39,7 @@ def get(fen):
                 file += 1 
 
     # we want to swap the inputs if it's black to move
+    stm = 0 if 'w' in fen else 1
     if stm == 1:
         input1, input2 = input2, input1
 

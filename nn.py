@@ -134,8 +134,8 @@ if __name__ == '__main__':
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
-    train_data_path = r'C:\Users\semio\Downloads\Temp\data\data.csv'
-    val_data_path = r'C:\Users\semio\Downloads\Temp\data\val_data.csv'
+    train_data_path = 'data/data.csv'
+    val_data_path = 'data/val_data.csv'
 
     train_dataset = ChessDataset(train_data_path, max_samples=None)
     val_dataset = ChessDataset(val_data_path, max_samples=None)
@@ -149,4 +149,4 @@ if __name__ == '__main__':
     criterion = MPELoss(power=2.5)
     optimizer = optim.Adam(net.parameters(), lr=0.01, betas=(0.95, 0.999))
     
-    train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50, resume=True)
+    train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50, resume=False)
