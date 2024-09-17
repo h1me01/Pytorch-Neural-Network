@@ -13,7 +13,7 @@ def process_eval(fen, eval_val):
         eval_val = -eval_val
     
     eval_val = torch.tensor(eval_val, dtype=torch.float32)
-    sigmoid_scalar = 0.0015
+    sigmoid_scalar = 0.00459
     eval_val = 1 / (1 + torch.exp(-eval_val * sigmoid_scalar))
     
     return eval_val.item()
@@ -23,9 +23,9 @@ for index, row in df.iterrows():
     eval_val = row[1] 
     processed_eval = process_eval(fen, eval_val)
     df.at[index, 1] = processed_eval 
-    if (index + 1) % 100000 == 0:
+    if (index + 1) % 500000 == 0:
         print(f'Processed {index + 1} rows')
 
-output_file_path = 'val_data.csv'
+output_file_path = 'data.csv'
 df.to_csv(output_file_path, index=False, header=False)
 print('Processing complete. Data saved to', output_file_path)

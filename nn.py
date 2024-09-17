@@ -35,7 +35,7 @@ class MPELoss(nn.Module):
         return torch.mean(torch.pow(abs_diff, self.power))
 
 class CustomSigmoid(nn.Module):
-    def __init__(self, scalar=0.0015):
+    def __init__(self, scalar=0.00459):
         super(CustomSigmoid, self).__init__()
         self.scalar = scalar
 
@@ -79,11 +79,16 @@ def train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50
 
     start_epoch = 0
     if resume:
-        checkpoint = torch.load('checkpoint/net_epoch_25_checkpoint.tar', map_location=device)
-        net.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        start_epoch = checkpoint['epoch'] + 1
-        print(f'Resuming training from epoch {start_epoch}...\n')
+        try:
+            checkpoint = torch.load('checkpoint/net_epoch_10_checkpoint.tar', map_location=device)
+            net.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            start_epoch = checkpoint['epoch'] + 1
+            print(f'Resuming training from epoch {start_epoch}...\n')
+        except FileNotFoundError:
+            print("Checkpoint not found, starting from scratch.")
+        except Exception as e:
+            print(f"Error loading checkpoint: {e}")
 
     for epoch in range(start_epoch, epochs):
         start_time = time.time()
@@ -126,14 +131,14 @@ def train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50
               f'Time per Epoch: {epoch_time:.2f} seconds')
         
         save_checkpoint(epoch, net, optimizer, f'checkpoint/net_epoch_{epoch+1}_checkpoint.tar')
-        torch.save(net.state_dict(), f'weights/nn-e{epoch+1}b256-768-512-1.nnue')
+        torch.save(net.state_dict(), f'weights/nn-e{epoch+1}b256-2x768-2x512-1.nnue')
 
 if __name__ == '__main__':
     torch.backends.cudnn.benchmark = True
     #fixed_seed.set_seed(42)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    
+
     train_data_path = 'data/data.csv'
     val_data_path = 'data/val_data.csv'
 
@@ -141,7 +146,7 @@ if __name__ == '__main__':
     val_dataset = ChessDataset(val_data_path, max_samples=None)
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=256, shuffle=True, num_workers=4, pin_memory=True)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=256, shuffle=False, num_workers=4, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=128, shuffle=False, num_workers=4, pin_memory=True)
     
     net = ChessNN() 
     net.apply(he_init)
@@ -149,4 +154,4 @@ if __name__ == '__main__':
     criterion = MPELoss(power=2.5)
     optimizer = optim.Adam(net.parameters(), lr=0.01, betas=(0.95, 0.999))
     
-    train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50, resume=False)
+    train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50, resume=True)
