@@ -45,8 +45,8 @@ class CustomSigmoid(nn.Module):
 class ChessNN(nn.Module):
     def __init__(self):
         super(ChessNN, self).__init__()
-        self.fc1 = nn.Linear(2*768, 2*512)  
-        self.fc2 = nn.Linear(2*512, 1)
+        self.fc1 = nn.Linear(2*768, 512)  
+        self.fc2 = nn.Linear(512, 1)
         self.custom_sigmoid = CustomSigmoid()  
 
     def forward(self, x1, x2):
@@ -80,7 +80,7 @@ def train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50
     start_epoch = 0
     if resume:
         try:
-            checkpoint = torch.load('checkpoint/net_epoch_10_checkpoint.tar', map_location=device)
+            checkpoint = torch.load('checkpoint/net_epoch_5_checkpoint.tar', map_location=device)
             net.load_state_dict(checkpoint['model_state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             start_epoch = checkpoint['epoch'] + 1
@@ -131,7 +131,7 @@ def train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50
               f'Time per Epoch: {epoch_time:.2f} seconds')
         
         save_checkpoint(epoch, net, optimizer, f'checkpoint/net_epoch_{epoch+1}_checkpoint.tar')
-        torch.save(net.state_dict(), f'weights/nn-e{epoch+1}b256-2x768-2x512-1.nnue')
+        torch.save(net.state_dict(), f'weights/nn-e{epoch+1}b256-2x768-2x256-1.nnue')
 
 if __name__ == '__main__':
     torch.backends.cudnn.benchmark = True
@@ -154,4 +154,4 @@ if __name__ == '__main__':
     criterion = MPELoss(power=2.5)
     optimizer = optim.Adam(net.parameters(), lr=0.01, betas=(0.95, 0.999))
     
-    train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50, resume=False)
+    train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50, resume=True)

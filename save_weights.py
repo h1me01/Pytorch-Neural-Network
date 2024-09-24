@@ -6,8 +6,8 @@ import sparse
 class ChessNN(nn.Module):
     def __init__(self):
         super(ChessNN, self).__init__()
-        self.fc1 = nn.Linear(2 * 768, 2 * 512) 
-        self.fc2 = nn.Linear(2 * 512, 1)
+        self.fc1 = nn.Linear(2 * 768, 512) 
+        self.fc2 = nn.Linear(512, 1)
 
     def forward(self, x1, x2):
         merged_input = torch.cat((x1, x2), dim=1)
@@ -15,7 +15,7 @@ class ChessNN(nn.Module):
         x = self.fc2(x) 
         return x
 
-def save(net, filename='nn-2x768-2x512-1.txt'):
+def save(net, filename='nn-2x768-2x256-1.txt'):
     with open(filename, 'w') as f:
         for name, param in net.named_parameters():
             if "weight" in name or "bias" in name:
@@ -38,7 +38,7 @@ def predict(net, fen):
     return output.item()
 
 if __name__ == '__main__':
-    weights_path = 'main_weights/nn-e25b256-2x768-2x512-1.nnue'
+    weights_path = 'main_weights/nn-e25b256-2x768-2x256-1.nnue'
 
     net = ChessNN()
     net.load_state_dict(torch.load(weights_path, weights_only=True))
@@ -46,4 +46,4 @@ if __name__ == '__main__':
     fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
     print(predict(net, fen))
 
-    #save(net)
+    save(net)
