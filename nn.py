@@ -35,7 +35,7 @@ class MPELoss(nn.Module):
         return torch.mean(torch.pow(abs_diff, self.power))
 
 class CustomSigmoid(nn.Module):
-    def __init__(self, scalar=0.00459):
+    def __init__(self, scalar=1.83804/400):
         super(CustomSigmoid, self).__init__()
         self.scalar = scalar
 
@@ -154,4 +154,4 @@ if __name__ == '__main__':
     criterion = MPELoss(power=2.5)
     optimizer = optim.Adam(net.parameters(), lr=0.01, betas=(0.95, 0.999))
     
-    train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50, resume=True)
+    train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50, resume=False)
