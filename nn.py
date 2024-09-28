@@ -45,14 +45,17 @@ class CustomSigmoid(nn.Module):
 class ChessNN(nn.Module):
     def __init__(self):
         super(ChessNN, self).__init__()
-        self.fc1 = nn.Linear(2*768, 512)  
-        self.fc2 = nn.Linear(512, 1)
+        self.fc1 = nn.Linear(768, 512)
+        self.fc2 = nn.Linear(512 * 2, 1)  
         self.custom_sigmoid = CustomSigmoid()  
 
     def forward(self, x1, x2):
+        x1 = torch.relu(self.fc1(x1))
+        x2 = torch.relu(self.fc1(x2))
+
         merged_input = torch.cat((x1, x2), dim=1)
-        x = torch.relu(self.fc1(merged_input)) 
-        x = self.custom_sigmoid(self.fc2(x))  
+
+        x = self.custom_sigmoid(self.fc2(merged_input))
         return x
 
 def he_init(m):
@@ -80,7 +83,7 @@ def train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50
     start_epoch = 0
     if resume:
         try:
-            checkpoint = torch.load('checkpoint/net_epoch_5_checkpoint.tar', map_location=device)
+            checkpoint = torch.load('checkpoint/net_epoch_22_checkpoint.tar', map_location=device)
             net.load_state_dict(checkpoint['model_state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             start_epoch = checkpoint['epoch'] + 1
@@ -131,7 +134,7 @@ def train(net, criterion, optimizer, train_loader, val_loader, device, epochs=50
               f'Time per Epoch: {epoch_time:.2f} seconds')
         
         save_checkpoint(epoch, net, optimizer, f'checkpoint/net_epoch_{epoch+1}_checkpoint.tar')
-        torch.save(net.state_dict(), f'weights/nn-e{epoch+1}b256-2x768-2x256-1.nnue')
+        torch.save(net.state_dict(), f'weights/nn-e{epoch+1}b256-768-2x512-1.nnue')
 
 if __name__ == '__main__':
     torch.backends.cudnn.benchmark = True
@@ -145,8 +148,8 @@ if __name__ == '__main__':
     train_dataset = ChessDataset(train_data_path, max_samples=None)
     val_dataset = ChessDataset(val_data_path, max_samples=None)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=256, shuffle=True, num_workers=4, pin_memory=True)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=128, shuffle=False, num_workers=4, pin_memory=True)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=256, shuffle=True, num_workers=6, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=128, shuffle=False, num_workers=6, pin_memory=True)
     
     net = ChessNN() 
     net.apply(he_init)
