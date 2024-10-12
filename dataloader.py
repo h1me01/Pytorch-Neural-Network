@@ -3,7 +3,7 @@ import numpy as np
 
 lib = ctypes.CDLL('lib/Astra-Dataloader.dll')
 
-class SparseResult(ctypes.Structure):
+class DenseResult(ctypes.Structure):
     _fields_ = [
         ("input1", ctypes.c_float * 768),
         ("input2", ctypes.c_float * 768),
@@ -15,7 +15,7 @@ class DataLoader:
         lib.create_data_loader.restype = ctypes.POINTER(ctypes.c_void_p)
         lib.delete_data_loader.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
         lib.get_size.restype = ctypes.c_size_t
-        lib.get_data.restype = SparseResult 
+        lib.get_data.restype = DenseResult 
 
         self.loader = lib.create_data_loader(path.encode('utf-8'))
 
@@ -36,8 +36,8 @@ class DataLoader:
 
 # test
 if __name__ == "__main__":
-    folder_path = r'C:\Users\semio\Downloads\chess_data.bin'  
-    loader = DataLoader(folder_path)
+    data_path = r'C:\Users\semio\Downloads\chess_data.bin'  
+    loader = DataLoader(data_path)
 
     size = loader.get_size()
     print(f"Dataset size: {size}")
